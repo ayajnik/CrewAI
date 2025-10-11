@@ -84,7 +84,7 @@ opentelemetry-api==1.37.0
 opentelemetry-exporter-otlp-proto-common==1.37.0
 opentelemetry-exporter-otlp-proto-grpc==1.37.0
 opentelemetry-exporter-otlp-proto-http==1.37.0
-opentelemetry-proto==1.37.0
+opentelemetry-proto
 opentelemetry-sdk==1.37.0
 opentelemetry-semantic-conventions==0.58b0
 opt-einsum==3.4.0
@@ -101,7 +101,7 @@ portalocker==2.7.0
 posthog==5.4.0
 prompt-toolkit==3.0.52
 propcache==0.4.1
-protobuf==4.25.8
+protobuf
 ptyprocess==0.7.0
 pure-eval==0.2.3
 pyasn1==0.6.1
@@ -135,10 +135,10 @@ stack-data==0.6.3
 sympy==1.14.0
 tenacity==9.1.2
 tensorboard==2.16.2
-tensorboard-data-server==0.7.2
-tensorflow==2.16.2
-tensorflow-io-gcs-filesystem==0.37.1
-tensorflow-macos==2.16.2
+# tensorboard-data-server==0.7.2
+# tensorflow==2.16.2
+# tensorflow-io-gcs-filesystem==0.37.1
+# tensorflow-macos==2.16.2
 termcolor==3.1.0
 tiktoken==0.12.0
 tokenizers==0.22.1
@@ -149,7 +149,7 @@ traitlets==5.14.3
 typer==0.19.2
 typing-extensions==4.15.0
 typing-inspection==0.4.2
-urllib3==2.5.0
+urllib3
 uv==0.9.1
 uvicorn==0.37.0
 uvloop==0.21.0
