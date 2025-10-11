@@ -1,0 +1,39 @@
+select_destination_task:
+  description: >
+    Analyze user preferences, travel dates, and budget to select optimal travel destinations.
+    Consider weather, local events, and trending locations.
+  expected_output: >
+    A recommended destination with justification, highlighting seasonal suitability, cost estimates, and sample itinerary packages.
+  agent: destination_selector
+
+gather_local_info_task:
+  description: >
+    Research key attractions, local tips, and customs for the selected destination.
+    Summarize unique experiences and dining suggestions within a 3-day trip window.
+  expected_output: >
+    A list of top 10 attractions, 5 local tips, and 3 dining recommendations as nested markdown lists.
+  agent: local_expert
+
+build_itinerary_task:
+  description: >
+    Structure a daily schedule for the trip, aligning best activities and logistics for each day.
+    Balance sightseeing, relaxation, meals, and transit according to user’s interests.
+  expected_output: >
+    A structured itinerary in markdown table format with dates, activities, time slots, and special notes.
+  agent: itinerary_builder
+
+optimize_budget_task:
+  description: >
+    Fetch and calculate costs for travel, accommodation, and activities based on live data.
+    Suggest preferred booking links and alternate cost-saving strategies.
+  expected_output: >
+    A cost breakdown table, booking URLs, and expense optimization suggestions.
+  agent: budget_advisor
+
+find_booking_options_task:
+  description: >
+    Search and recommend available flights, hotels, and local transport for the selected itinerary dates.
+    Highlight options with pros/cons and quick booking links.
+  expected_output: >
+    A list of bookable flights, hotels, and transport options, with one-line comments per choice and booking URLs.
+  agent: booking_assistant
