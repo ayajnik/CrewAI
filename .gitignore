@@ -210,3 +210,8 @@ preciision_agronomist/.env
 preciision_agronomist/.venv
 preciision_agronomist/venv
 preciision_agronomist/report.md
+
+## deep learning data ignore
+
+data/
+data
