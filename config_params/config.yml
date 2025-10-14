@@ -1,0 +1,8 @@
+root_dir: artifacts
+
+data_validation:
+    root_dir: artifacts/data_validation
+    STATUS_FILE: artifacts/data_validation/data_validation_status.txt
+    train_data: data/train
+    test_data: data/test
+    val_data: data/valid
