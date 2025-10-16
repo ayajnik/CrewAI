@@ -12,8 +12,25 @@ data_transformation:
   transformed_train_data: artifacts/data_transformation/train
   transformed_test_data: artifacts/data_transformation/test
   transformed_val_data: artifacts/data_transformation/val
-  image_size: [224, 224]  # or [299, 299] for Inception, [384, 384] for EfficientNet-B0, etc.
-  normalization_method: "imagenet"  # or "standard", "rescale", "model_specific"
-  model_name: "ResNet50"  # EfficientNetB0, MobileNetV2, etc.
+  image_size: [224, 224]
+  normalization_method: "imagenet"
+  model_name: "ResNet50"
   color_mode: "rgb"
   data_format: "channels_last"
+
+model_training:
+  root_dir: artifacts/model_training
+  trained_model_path: artifacts/model_training/model.h5
+  trained_model_weights: artifacts/model_training/best_weights.h5
+  model_name: "ResNet50"
+  image_size: [224, 224]
+  num_classes: 10  # Update based on your actual number of classes
+  epochs: 50
+  batch_size: 32
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  reduce_lr_patience: 5
+  validation_split: 0.0
+  use_class_weights: True
+  freeze_base_layers: True
+  fine_tune_from_layer: 100

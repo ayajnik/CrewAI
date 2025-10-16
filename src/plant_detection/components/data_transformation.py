@@ -7,6 +7,8 @@ from src.plant_detection import logger
 from typing import Tuple, Optional
 import os
 
+cv2.setNumThreads(0)
+
 class DataTransformation:
     def __init__(self, config: DataTransformationConfig):
         self.config = config

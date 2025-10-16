@@ -2,6 +2,7 @@ from src.plant_detection.constants import CONFIG_FILE_PATH
 from src.plant_detection.utils.main_utils import read_yaml, create_directories
 from src.plant_detection.entity.config_entity import DataValidationConfig
 from src.plant_detection.entity.config_entity import DataTransformationConfig
+from src.plant_detection.entity.config_entity import ModelTrainingConfig
 from pathlib import Path
 
 class ConfigurationManager:
@@ -65,3 +66,36 @@ class ConfigurationManager:
         )
         
         return data_transformation_config
+
+    from src.plant_detection.entity.config_entity import ModelTrainingConfig
+
+# Add this method to ConfigurationManager class:
+
+    def get_model_training_config(self) -> ModelTrainingConfig:
+        config = self.config.model_training
+        data_transform_config = self.config.data_transformation
+        
+        create_directories([config.root_dir])
+        
+        model_training_config = ModelTrainingConfig(
+            root_dir=Path(config.root_dir),
+            trained_model_path=Path(config.trained_model_path),
+            trained_model_weights=Path(config.trained_model_weights),
+            transformed_train_data=Path(data_transform_config.transformed_train_data),
+            transformed_test_data=Path(data_transform_config.transformed_test_data),
+            transformed_val_data=Path(data_transform_config.transformed_val_data),
+            model_name=config.model_name,
+            image_size=tuple(config.image_size),
+            num_classes=config.num_classes,
+            epochs=config.epochs,
+            batch_size=config.batch_size,
+            learning_rate=config.learning_rate,
+            early_stopping_patience=config.early_stopping_patience,
+            reduce_lr_patience=config.reduce_lr_patience,
+            validation_split=config.validation_split,
+            use_class_weights=config.use_class_weights,
+            freeze_base_layers=config.freeze_base_layers,
+            fine_tune_from_layer=config.fine_tune_from_layer
+        )
+        
+        return model_training_config
