@@ -21,11 +21,11 @@ data_transformation:
 model_training:
   root_dir: artifacts/model_training
   trained_model_path: artifacts/model_training/model.h5
-  trained_model_weights: artifacts/model_training/best_weights.h5
+  trained_model_weights: artifacts/model_training/best_weights.weights.h5
   model_name: "ResNet50"
   image_size: [224, 224]
-  num_classes: 10  # Update based on your actual number of classes
-  epochs: 50
+  num_classes: 11
+  epochs: 5
   batch_size: 32
   learning_rate: 0.001
   early_stopping_patience: 10

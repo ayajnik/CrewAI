@@ -1,36 +1,11 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-# import tensorflow as tf
-# from tensorflow import keras
-# from tensorflow.keras import layers, models, optimizers, callbacks
-# from tensorflow.keras.applications import ResNet50, VGG16, MobileNetV2, EfficientNetB0
 from sklearn.utils.class_weight import compute_class_weight
 from src.plant_detection.entity.config_entity import ModelTrainingConfig
 from src.plant_detection import logger
 import json
-
 import os
-os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-
-
-class ModelTrainer:
-    def __init__(self, config: ModelTrainingConfig):
-        self.config = config
-        self.model = None
-        self.class_names = None
-        self._tf_loaded = False
-    
-    import numpy as np
-import pandas as pd
-from pathlib import Path
-from sklearn.utils.class_weight import compute_class_weight
-from src.plant_detection.entity.config_entity import ModelTrainingConfig
-from src.plant_detection import logger
-import json
-
-# REMOVE THIS LINE - IT'S TOO LATE HERE
-# os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
 
 class ModelTrainer:
@@ -47,23 +22,12 @@ class ModelTrainer:
             
         logger.info("Loading TensorFlow - please wait (30-90 seconds on macOS)...")
         
-        # Add a timeout mechanism
-        import signal
-        
-        def timeout_handler(signum, frame):
-            raise TimeoutError("TensorFlow import timed out after 120 seconds")
-        
-        # Set a 120 second timeout
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(120)
-        
         try:
             import tensorflow as tf
-            signal.alarm(0)  # Cancel the alarm
             
-            # Configure TensorFlow
-            tf.config.threading.set_intra_op_parallelism_threads(1)
-            tf.config.threading.set_inter_op_parallelism_threads(1)
+            # Configure TensorFlow for memory efficiency
+            tf.config.threading.set_intra_op_parallelism_threads(2)
+            tf.config.threading.set_inter_op_parallelism_threads(2)
             tf.config.set_visible_devices([], 'GPU')
 
             from tensorflow import keras
@@ -91,15 +55,72 @@ class ModelTrainer:
             self._tf_loaded = True
             logger.info("TensorFlow loaded successfully!")
             
-        except TimeoutError as e:
-            logger.error("TensorFlow import timed out - this is a known macOS issue")
-            logger.error("Try running with: OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES python main.py")
+        except Exception as e:
+            logger.error(f"Failed to load TensorFlow: {e}")
             raise
 
+    def _create_tf_dataset(self, data_dir, annotations, class_to_idx, batch_size, shuffle):
+        """Create optimized tf.data.Dataset pipeline"""
         
-    def _load_data(self, data_dir: Path):
-        """Load preprocessed numpy arrays and annotations"""
-        logger.info(f"Loading data from {data_dir}")
+        # Prepare file paths and labels
+        file_paths = []
+        labels = []
+        
+        unique_files = annotations['filename'].unique()
+        for filename in unique_files:
+            npy_filename = Path(filename).stem + '.npy'
+            img_path = Path(data_dir) / npy_filename
+            
+            if img_path.exists():
+                label = annotations[annotations['filename'] == filename]['class'].iloc[0]
+                label_idx = class_to_idx[label]
+                
+                file_paths.append(str(img_path))
+                labels.append(label_idx)
+        
+        logger.info(f"Creating dataset with {len(file_paths)} samples")
+        
+        # Create dataset from file paths
+        def load_npy(path, label):
+            """Load numpy array using TensorFlow"""
+            def _load_fn(path_tensor, label_tensor):
+                # Load numpy file
+                data = np.load(path_tensor.numpy())
+                return data.astype(np.float32), label_tensor.numpy().astype(np.int32)
+            
+            image, label = self.tf.py_function(
+                _load_fn,
+                [path, label],
+                [self.tf.float32, self.tf.int32]
+            )
+            
+            # Set shapes explicitly
+            image.set_shape([*self.config.image_size, 3])
+            label.set_shape([])
+            
+            return image, label
+        
+        # Create dataset
+        dataset = self.tf.data.Dataset.from_tensor_slices((file_paths, labels))
+        
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=min(1000, len(file_paths)))
+        
+        # Load images in parallel
+        dataset = dataset.map(
+            load_npy,
+            num_parallel_calls=self.tf.data.AUTOTUNE
+        )
+        
+        # Batch and prefetch
+        dataset = dataset.batch(batch_size)
+        dataset = dataset.prefetch(self.tf.data.AUTOTUNE)
+        
+        return dataset
+
+    def _prepare_datasets(self, data_dir: Path, shuffle=True):
+        """Prepare optimized tf.data.Dataset"""
+        logger.info(f"Preparing dataset for {data_dir}")
         
         # Load annotations
         annotations_path = Path(data_dir) / "_annotations.csv"
@@ -113,37 +134,21 @@ class ModelTrainer:
         # Create class to index mapping
         class_to_idx = {cls: idx for idx, cls in enumerate(self.class_names)}
         
-        # Load images and labels
-        images = []
-        labels = []
+        # Create dataset
+        dataset = self._create_tf_dataset(
+            data_dir=data_dir,
+            annotations=annotations,
+            class_to_idx=class_to_idx,
+            batch_size=self.config.batch_size,
+            shuffle=shuffle
+        )
         
-        # Get unique filenames (to avoid duplicates from multiple bounding boxes)
-        unique_files = annotations['filename'].unique()
+        # Count total samples
+        num_samples = len(annotations['filename'].unique())
+        steps = int(np.ceil(num_samples / self.config.batch_size))
+        logger.info(f"Dataset ready with {num_samples} samples, {steps} steps per epoch")
         
-        for filename in unique_files:
-            # Load preprocessed image
-            npy_filename = Path(filename).stem + '.npy'
-            img_path = Path(data_dir) / npy_filename
-            
-            if not img_path.exists():
-                logger.warning(f"Preprocessed image not found: {img_path}")
-                continue
-            
-            image = np.load(img_path)
-            
-            # Get label (using first occurrence if multiple boxes)
-            label = annotations[annotations['filename'] == filename]['class'].iloc[0]
-            label_idx = class_to_idx[label]
-            
-            images.append(image)
-            labels.append(label_idx)
-        
-        images = np.array(images)
-        labels = np.array(labels)
-        
-        logger.info(f"Loaded {len(images)} images with shape {images.shape}")
-        
-        return images, labels
+        return dataset, annotations, steps
     
     def _get_base_model(self):
         """Get pre-trained base model"""
@@ -152,7 +157,6 @@ class ModelTrainer:
             
         input_shape = (*self.config.image_size, 3)
         
-        # Use models from instance variables
         if self.config.model_name not in self.models_dict:
             raise ValueError(f"Model {self.config.model_name} not supported. Available: {list(self.models_dict.keys())}")
         
@@ -189,11 +193,11 @@ class ModelTrainer:
         
         model = self.keras.Model(inputs, outputs)
         
-        # Compile model
+        # Compile model with mixed precision for speed
         model.compile(
             optimizer=self.optimizers.Adam(learning_rate=self.config.learning_rate),
             loss='sparse_categorical_crossentropy',
-            metrics=['accuracy', self.keras.metrics.SparseCategoricalAccuracy(name='acc')]
+            metrics=['accuracy']
         )
         
         logger.info(f"Model built successfully")
@@ -201,10 +205,19 @@ class ModelTrainer:
         
         return model
     
-    def _compute_class_weights(self, labels):
+    def _compute_class_weights(self, annotations):
         """Compute class weights for imbalanced datasets"""
         if not self.config.use_class_weights:
             return None
+        
+        # Get labels from annotations
+        labels = []
+        for filename in annotations['filename'].unique():
+            label = annotations[annotations['filename'] == filename]['class'].iloc[0]
+            label_idx = self.class_names.index(label)
+            labels.append(label_idx)
+        
+        labels = np.array(labels)
         
         class_weights = compute_class_weight(
             class_weight='balanced',
@@ -261,32 +274,37 @@ class ModelTrainer:
         return callback_list
     
     def train(self):
-        """Main training function"""
+        """Main training function with optimized data loading"""
         self._load_tensorflow()
         logger.info("Starting model training...")
         
-        # Load data
-        X_train, y_train = self._load_data(self.config.transformed_train_data)
-        X_val, y_val = self._load_data(self.config.transformed_val_data)
+        # Prepare datasets
+        train_dataset, train_annotations, train_steps = self._prepare_datasets(
+            self.config.transformed_train_data, shuffle=True
+        )
+        val_dataset, val_annotations, val_steps = self._prepare_datasets(
+            self.config.transformed_val_data, shuffle=False
+        )
         
-        logger.info(f"Training set: {X_train.shape}, Validation set: {X_val.shape}")
+        logger.info(f"Training steps: {train_steps}, Validation steps: {val_steps}")
         
         # Build model
         self.model = self._build_model()
         
         # Compute class weights
-        class_weights = self._compute_class_weights(y_train)
+        class_weights = self._compute_class_weights(train_annotations)
         
         # Get callbacks
         callback_list = self._get_callbacks()
         
-        # Train model
-        logger.info("Starting training...")
+        # Train model using datasets
+        logger.info("Starting training with optimized data pipeline...")
         history = self.model.fit(
-            X_train, y_train,
-            validation_data=(X_val, y_val),
+            train_dataset,
+            validation_data=val_dataset,
             epochs=self.config.epochs,
-            batch_size=self.config.batch_size,
+            steps_per_epoch=train_steps,
+            validation_steps=val_steps,
             class_weight=class_weights,
             callbacks=callback_list,
             verbose=1
@@ -304,8 +322,9 @@ class ModelTrainer:
         
         # Save training history
         history_path = Path(self.config.root_dir) / 'training_history.json'
+        history_dict = {k: [float(v) for v in vals] for k, vals in history.history.items()}
         with open(history_path, 'w') as f:
-            json.dump(history.history, f)
+            json.dump(history_dict, f)
         logger.info(f"Training history saved to {history_path}")
         
         return history
@@ -317,13 +336,19 @@ class ModelTrainer:
             
         logger.info("Evaluating model on test set...")
         
-        X_test, y_test = self._load_data(self.config.transformed_test_data)
+        # Prepare test dataset
+        test_dataset, _, test_steps = self._prepare_datasets(
+            self.config.transformed_test_data, shuffle=False
+        )
         
         if self.model is None:
             logger.info("Loading trained model...")
             self.model = self.keras.models.load_model(self.config.trained_model_path)
         
-        test_loss, test_acc = self.model.evaluate(X_test, y_test, verbose=1)
+        # Evaluate using dataset
+        results = self.model.evaluate(test_dataset, steps=test_steps, verbose=1)
+        test_loss = results[0]
+        test_acc = results[1]
         
         logger.info(f"Test Loss: {test_loss:.4f}")
         logger.info(f"Test Accuracy: {test_acc:.4f}")
