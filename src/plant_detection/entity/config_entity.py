@@ -29,9 +29,13 @@ class ModelTrainingConfig:
     root_dir: Path
     trained_model_path: Path
     trained_model_weights: Path
-    transformed_train_data: Path  # Source of preprocessed data
+    transformed_train_data: Path
+    trained_model_yolo_path: Path
     transformed_test_data: Path
     transformed_val_data: Path
+    train_data: Path  # Raw training data for YOLO
+    test_data: Path   # Raw test data for YOLO
+    val_data: Path    # Raw validation data for YOLO
     model_name: str
     image_size: tuple
     num_classes: int

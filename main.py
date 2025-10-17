@@ -31,6 +31,7 @@ from src.plant_detection import logger
 from src.plant_detection.pipeline.data_validation_stage import DataValidationTrainingPipeline
 from src.plant_detection.pipeline.data_transformation_stage import DataTransformationTrainingPipeline
 from src.plant_detection.pipeline.model_training_stage import ModelTrainingPipeline
+from src.plant_detection.pipeline.object_detection_stage import ObjectDetectionStage
 
 
 
@@ -54,11 +55,23 @@ from src.plant_detection.pipeline.model_training_stage import ModelTrainingPipel
 #         logger.exception(e)
 #         raise e
 
-STAGE_NAME = "Model Training stage"
+# STAGE_NAME = "Model Training stage"
+# try:
+#    logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
+#    logger.info("About to create ModelTrainingPipeline instance...")
+#    model_training = ModelTrainingPipeline()
+#    logger.info("ModelTrainingPipeline created, calling main()...")
+#    model_training.main()
+#    logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+# except Exception as e:
+#         logger.exception(e)
+#         raise e
+
+STAGE_NAME = "Object Detection Model Training stage"
 try:
    logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
    logger.info("About to create ModelTrainingPipeline instance...")
-   model_training = ModelTrainingPipeline()
+   model_training = ObjectDetectionStage()
    logger.info("ModelTrainingPipeline created, calling main()...")
    model_training.main()
    logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")

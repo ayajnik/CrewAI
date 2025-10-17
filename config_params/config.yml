@@ -21,6 +21,7 @@ data_transformation:
 model_training:
   root_dir: artifacts/model_training
   trained_model_path: artifacts/model_training/model.h5
+  trained_model_yolo_path: artifacts/model_training/model_yolo.h5
   trained_model_weights: artifacts/model_training/best_weights.weights.h5
   model_name: "ResNet50"
   image_size: [224, 224]
@@ -34,3 +35,6 @@ model_training:
   use_class_weights: True
   freeze_base_layers: True
   fine_tune_from_layer: 100
+  train_data: data/train
+  test_data: data/test
+  val_data: data/valid
