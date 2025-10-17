@@ -129,7 +129,7 @@ class YOLODataConverter:
         data_config = {
             'path': str(Path(self.config_modelTrain.trained_model_yolo_path).absolute()),
             'train': 'train/images',
-            'val': 'valid/images',
+            'val': 'val/images',
             'test': 'test/images',
             'nc': len(self.class_names),  # Number of classes
             'names': self.class_names  # Class names list
