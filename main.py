@@ -5,6 +5,12 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["METAL_DEVICE_WRAPPER_TYPE"] = "1"
 
+# Fix MLflow tracking URI for Windows (use proper file:// URI scheme)
+# MLflow expects file:// prefix for local paths
+import pathlib
+mlflow_path = pathlib.Path("runs/mlflow").absolute()
+os.environ["MLFLOW_TRACKING_URI"] = f"file:///{mlflow_path.as_posix()}"
+
 # Aggressively limit threading to prevent deadlocks
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
