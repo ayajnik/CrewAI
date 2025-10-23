@@ -27,7 +27,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # Disable TensorFlow GPU (force CPU only)
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "false"
 
-# 🔥 ADD THESE CRITICAL macOS FIXES 🔥
 os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 os.environ["GRPC_POLL_STRATEGY"] = "poll"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -41,37 +40,37 @@ from src.plant_detection.pipeline.object_detection_stage import ObjectDetectionS
 
 
 
-# STAGE_NAME = "Data Validation stage"
-# try:
-#    logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<") 
-#    data_validation = DataValidationTrainingPipeline()
-#    data_validation.main()
-#    logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
-# except Exception as e:
-#         logger.exception(e)
-#         raise e
+STAGE_NAME = "Data Validation stage"
+try:
+   logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<") 
+   data_validation = DataValidationTrainingPipeline()
+   data_validation.main()
+   logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+except Exception as e:
+        logger.exception(e)
+        raise e
 
-# STAGE_NAME = "Data Transformation stage"
-# try:
-#    logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<") 
-#    data_transformation = DataTransformationTrainingPipeline()
-#    data_transformation.main()
-#    logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
-# except Exception as e:
-#         logger.exception(e)
-#         raise e
+STAGE_NAME = "Data Transformation stage"
+try:
+   logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<") 
+   data_transformation = DataTransformationTrainingPipeline()
+   data_transformation.main()
+   logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+except Exception as e:
+        logger.exception(e)
+        raise e
 
-# STAGE_NAME = "Model Training stage"
-# try:
-#    logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
-#    logger.info("About to create ModelTrainingPipeline instance...")
-#    model_training = ModelTrainingPipeline()
-#    logger.info("ModelTrainingPipeline created, calling main()...")
-#    model_training.main()
-#    logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
-# except Exception as e:
-#         logger.exception(e)
-#         raise e
+STAGE_NAME = "Model Training stage"
+try:
+   logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
+   logger.info("About to create ModelTrainingPipeline instance...")
+   model_training = ModelTrainingPipeline()
+   logger.info("ModelTrainingPipeline created, calling main()...")
+   model_training.main()
+   logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+except Exception as e:
+        logger.exception(e)
+        raise e
 
 STAGE_NAME = "Object Detection Model Training stage"
 try:

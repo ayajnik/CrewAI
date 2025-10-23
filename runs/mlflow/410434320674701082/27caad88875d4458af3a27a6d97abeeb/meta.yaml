@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/ayush/OneDrive/Documents/python/CrewAI/runs/mlflow/410434320674701082/27caad88875d4458af3a27a6d97abeeb/artifacts
+end_time: 1760736433902
+entry_point_name: ''
+experiment_id: '410434320674701082'
+lifecycle_stage: active
+run_id: 27caad88875d4458af3a27a6d97abeeb
+run_name: plant_disease_run1
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760729905074
+status: 3
+tags: []
+user_id: ayush
