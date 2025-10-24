@@ -1,0 +1,40 @@
+name: precision-agronomist
+description: AI-powered plant disease detection system with YOLO, trend analysis, and farmer chatbot
+version: 1.0.0
+
+# CrewAI specific configuration
+crew:
+  main: src.plant_detection.crew.PrecisionAgronomist
+  entry_point: src.plant_detection.main.run
+
+# Dependencies
+dependencies:
+  - crewai[tools]>=0.203.0,<1.0.0
+  - pandas>=2.2.0,<3.0.0
+  - numpy>=1.26.0,<2.0.0
+  - gdown>=4.7.0
+  - pillow>=10.0.0
+  - deep-translator>=1.11.4
+  - fastapi>=0.104.0
+  - uvicorn>=0.24.0
+  - python-multipart>=0.0.6
+
+# Runtime configuration
+runtime:
+  python_version: "3.10"
+  max_execution_time: 600
+  memory: 2048
+
+# API endpoints
+api:
+  enabled: true
+  endpoints:
+    - path: /detect
+      method: POST
+      description: "Detect plant diseases in uploaded images"
+    - path: /chatbot
+      method: POST
+      description: "Ask the agricultural advisor chatbot"
+    - path: /trends
+      method: GET
+      description: "Get disease trend analysis"

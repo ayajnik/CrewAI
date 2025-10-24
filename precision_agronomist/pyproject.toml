@@ -1,7 +1,7 @@
 [project]
-name = "precision_agronomist"
+name = "precision-agronomist"
 version = "0.1.0"
-description = "precision_agronomist using crewAI for plant disease detection"
+description = "AI-powered plant disease detection system using CrewAI"
 authors = [{ name = "Ayush Yajnik", email = "ayushyajnik1@outlook.com" }]
 requires-python = ">=3.10"
 dependencies = [
@@ -10,12 +10,11 @@ dependencies = [
     "numpy>=1.26.0,<2.0.0",
     "gdown>=4.7.0",
     "pillow>=10.0.0",
-    "deep-translator>=1.11.4",  # For multi-language translation (no dependency conflicts)
-    "fastapi>=0.104.0",  # For API endpoints
-    "uvicorn>=0.24.0",   # For API server
-    "python-multipart>=0.0.6",  # For file uploads
+    "deep-translator>=1.11.4",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
 ]
-
 
 [project.scripts]
 precision_agronomist = "precision_agronomist.main:run"
@@ -25,8 +24,14 @@ replay = "precision_agronomist.main:replay"
 test = "precision_agronomist.main:test"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.crewai]
 type = "crew"
