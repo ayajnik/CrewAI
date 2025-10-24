@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 import sys
 import warnings
-
 from datetime import datetime
-
 from precision_agronomist.crew import PrecisionAgronomist
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -15,16 +13,46 @@ warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
 def run():
     """
-    Run the crew.
+    Run the plant disease detection crew.
     """
     inputs = {
-        'topic': 'AI LLMs',
-        'current_year': str(datetime.now().year)
+        # Google Drive URLs for your models (replace with actual URLs or set to None if models exist)
+        # To skip downloading, set these to 'None' or provide empty strings
+        'classification_model_url': 'None',  # Replace with your Google Drive URL or leave as 'None'
+        'yolo_model_url': 'None',  # Replace with your Google Drive URL or leave as 'None'
+        'class_names_url': 'None',  # Replace with your Google Drive URL or leave as 'None'
+        
+        # Prediction parameters
+        'num_images': 5,  # Number of test images to analyze
+        'detection_threshold': 0.25,  # YOLO confidence threshold (0-1)
+        
+        # Metadata
+        'current_date': str(datetime.now().strftime('%Y-%m-%d'))
     }
     
+    print("\n" + "="*60)
+    print("🌱 PRECISION AGRONOMIST - Plant Disease Detection")
+    print("="*60)
+    print(f"Starting analysis on {inputs['current_date']}")
+    print(f"Analyzing {inputs['num_images']} test images")
+    print(f"Detection threshold: {inputs['detection_threshold']}")
+    print("="*60 + "\n")
+    
     try:
-        PrecisionAgronomist().crew().kickoff(inputs=inputs)
+        result = PrecisionAgronomist().crew().kickoff(inputs=inputs)
+        print("\n" + "="*60)
+        print("✓ Plant Disease Detection Complete!")
+        print("="*60)
+        print(f"\nReport saved to: precision_agronomist/plant_disease_report.md")
+        print("\nCheck the following locations for results:")
+        print("  - Classification results: In the report")
+        print("  - Detection visualizations: artifacts/yolo_detection/predictions/crew_results/")
+        print("="*60 + "\n")
+        return result
     except Exception as e:
+        print("\n" + "="*60)
+        print("✗ Error occurred during execution")
+        print("="*60)
         raise Exception(f"An error occurred while running the crew: {e}")
 
 
@@ -33,8 +61,12 @@ def train():
     Train the crew for a given number of iterations.
     """
     inputs = {
-        "topic": "AI LLMs",
-        'current_year': str(datetime.now().year)
+        'classification_model_url': 'None',
+        'yolo_model_url': 'None',
+        'class_names_url': 'None',
+        'num_images': 3,
+        'detection_threshold': 0.25,
+        'current_date': str(datetime.now().strftime('%Y-%m-%d'))
     }
     try:
         PrecisionAgronomist().crew().train(n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs)
@@ -57,8 +89,12 @@ def test():
     Test the crew execution and returns the results.
     """
     inputs = {
-        "topic": "AI LLMs",
-        "current_year": str(datetime.now().year)
+        'classification_model_url': 'None',
+        'yolo_model_url': 'None',
+        'class_names_url': 'None',
+        'num_images': 2,
+        'detection_threshold': 0.25,
+        'current_date': str(datetime.now().strftime('%Y-%m-%d'))
     }
     
     try:
@@ -66,3 +102,7 @@ def test():
 
     except Exception as e:
         raise Exception(f"An error occurred while testing the crew: {e}")
+
+
+if __name__ == "__main__":
+    run()

@@ -1,17 +1,115 @@
-research_task:
+download_models_task:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
+    Download the required model artifacts from Google Drive if they are provided:
+    1. ResNet50 classification model (model.h5)
+    2. YOLOv8 detection model (best.pt)
+    3. Class names file (class_names.json)
+    
+    Google Drive URLs (if provided):
+    - Classification Model: {classification_model_url}
+    - YOLO Model: {yolo_model_url}
+    - Class Names: {class_names_url}
+    
+    If URLs are not provided or set to 'None', skip downloading and assume models
+    are already in place. Verify that all required model files exist in their
+    expected locations.
   expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    Confirmation that all required models are either downloaded successfully or
+    already exist at correct locations:
+    - artifacts/model_training/model.h5
+    - artifacts/yolo_detection/plant_disease_run1/weights/best.pt
+    - artifacts/model_training/class_names.json
+  agent: model_manager
 
-reporting_task:
+load_test_images_task:
   description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    Load {num_images} test images from the data/test directory.
+    Select images randomly to get diverse disease samples for analysis.
+    Return the absolute paths to all selected images.
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A JSON formatted list containing {num_images} absolute image file paths
+    ready for analysis, along with metadata about total available images
+  agent: image_analyst
+
+classify_images_task:
+  description: >
+    For each image loaded in the previous task, perform ResNet50 classification
+    to identify plant diseases. For each image:
+    1. Determine the predicted plant disease class
+    2. Calculate confidence score for the prediction
+    3. Identify the top 3 possible disease classes with their probabilities
+    
+    Use the ResNet50 model that was downloaded/verified earlier.
+    Process ALL images provided from the load_test_images_task.
+  expected_output: >
+    A comprehensive classification report for all images including:
+    - Image filename
+    - Predicted disease class
+    - Confidence scores
+    - Top 3 alternative predictions
+    Format as structured JSON or clear text
+  agent: image_analyst
+  context:
+    - load_test_images_task
+
+detect_diseases_task:
+  description: >
+    For the SAME images that were classified, run YOLOv8 object detection to
+    localize disease regions. For each image:
+    1. Detect all disease regions with bounding boxes
+    2. Identify the specific disease class for each detection
+    3. Provide confidence scores for each detection
+    
+    Use confidence threshold of {detection_threshold}.
+    Process ALL images from the load_test_images_task.
+  expected_output: >
+    A comprehensive object detection report showing:
+    - Image filename
+    - Number of detections found
+    - For each detection: class label, confidence score, and bounding box coordinates
+    - Location of saved annotated images
+    Format as structured JSON or clear text
+  agent: image_analyst
+  context:
+    - classify_images_task
+
+generate_report_task:
+  description: >
+    Create a comprehensive plant disease diagnostic report by analyzing and
+    combining results from both classification and detection tasks.
+    
+    The report should include:
+    1. Executive Summary
+       - Total images analyzed
+       - Overall findings and patterns
+    
+    2. Image-by-Image Analysis
+       - For each image:
+         * Classification result (overall disease)
+         * Detection results (localized disease regions)
+         * Comparison: Does detection confirm classification?
+         * Number of affected areas
+    
+    3. Model Performance Comparison
+       - Agreement between classification and detection
+       - Confidence levels across both models
+    
+    4. Key Findings and Recommendations
+       - Most common diseases detected
+       - Severity assessment based on detection count
+       - Suggested actions or treatments (if applicable)
+    
+    Format the report in clean markdown with headers, bullet points, and tables
+    where appropriate. Make it professional and actionable.
+  expected_output: >
+    A detailed markdown report (plant_disease_report.md) with:
+    - Executive summary of all findings
+    - Detailed analysis for each image
+    - Comparison between classification and detection results
+    - Professional recommendations based on AI model outputs
+    - Clear formatting with sections, tables, and visual hierarchy
+  agent: report_generator
+  output_file: 'plant_disease_report.md'
+  context:
+    - classify_images_task
+    - detect_diseases_task

@@ -2,13 +2,17 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
-# If you want to run a snippet of code before or after the crew starts,
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
+
+# Import custom tools
+from precision_agronomist.tools.model_downloader_tool import ModelDownloaderTool
+from precision_agronomist.tools.image_loader_tool import ImageLoaderTool
+from precision_agronomist.tools.image_classifier_tool import ImageClassifierTool
+from precision_agronomist.tools.yolo_detector_tool import YOLODetectorTool
+
 
 @CrewBase
 class PrecisionAgronomist():
-    """PrecisionAgronomist crew"""
+    """PrecisionAgronomist crew for plant disease detection"""
 
     agents: List[BaseAgent]
     tasks: List[Task]
@@ -19,34 +23,72 @@ class PrecisionAgronomist():
     
     # If you would like to add tools to your agents, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
+    
     @agent
-    def researcher(self) -> Agent:
+    def model_manager(self) -> Agent:
         return Agent(
-            config=self.agents_config['researcher'], # type: ignore[index]
-            verbose=True
+            config=self.agents_config['model_manager'],  # type: ignore[index]
+            verbose=True,
+            tools=[ModelDownloaderTool()]
         )
 
     @agent
-    def reporting_analyst(self) -> Agent:
+    def image_analyst(self) -> Agent:
         return Agent(
-            config=self.agents_config['reporting_analyst'], # type: ignore[index]
+            config=self.agents_config['image_analyst'],  # type: ignore[index]
+            verbose=True,
+            tools=[
+                ImageLoaderTool(),
+                ImageClassifierTool(),
+                YOLODetectorTool()
+            ]
+        )
+
+    @agent
+    def report_generator(self) -> Agent:
+        return Agent(
+            config=self.agents_config['report_generator'],  # type: ignore[index]
             verbose=True
         )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
+    
     @task
-    def research_task(self) -> Task:
+    def download_models_task(self) -> Task:
         return Task(
-            config=self.tasks_config['research_task'], # type: ignore[index]
+            config=self.tasks_config['download_models_task'],  # type: ignore[index]
+            agent=self.model_manager()
         )
 
     @task
-    def reporting_task(self) -> Task:
+    def load_test_images_task(self) -> Task:
         return Task(
-            config=self.tasks_config['reporting_task'], # type: ignore[index]
-            output_file='report.md'
+            config=self.tasks_config['load_test_images_task'],  # type: ignore[index]
+            agent=self.image_analyst()
+        )
+
+    @task
+    def classify_images_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['classify_images_task'],  # type: ignore[index]
+            agent=self.image_analyst()
+        )
+
+    @task
+    def detect_diseases_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['detect_diseases_task'],  # type: ignore[index]
+            agent=self.image_analyst()
+        )
+
+    @task
+    def generate_report_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['generate_report_task'],  # type: ignore[index]
+            agent=self.report_generator(),
+            output_file='plant_disease_report.md'
         )
 
     @crew
@@ -56,8 +98,8 @@ class PrecisionAgronomist():
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
 
         return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
+            agents=self.agents,  # Automatically created by the @agent decorator
+            tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
             # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
