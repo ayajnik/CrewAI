@@ -5,7 +5,6 @@ import subprocess
 import json
 from pathlib import Path
 
-
 class ImageClassifierInput(BaseModel):
     """Input schema for ImageClassifier."""
     image_path: str = Field(..., description="Absolute path to the image to classify")
