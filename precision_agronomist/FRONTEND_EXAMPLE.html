@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Agronomist - Plant Disease Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #2ecc71;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #2ecc71;
+            padding-bottom: 10px;
+        }
+
+        .language-selector {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .file-upload {
+            border: 3px dashed #2ecc71;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: white;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #27ae60;
+            background: #f0fdf4;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .chatbot {
+            grid-column: span 2;
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        .chat-response {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            min-height: 100px;
+            border-left: 4px solid #2ecc71;
+            display: none;
+        }
+
+        .chat-response.active {
+            display: block;
+        }
+
+        .results {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #2ecc71;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .feature-box h3 {
+            color: #2ecc71;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .chatbot,
+            .results {
+                grid-column: span 1;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Precision Agronomist</h1>
+            <p>AI-Powered Plant Disease Detection & Agricultural Advisory</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Detection Section -->
+            <div class="card">
+                <h2>📸 Disease Detection</h2>
+                
+                <label for="language">Select Language:</label>
+                <select id="language" class="language-selector">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español (Spanish)</option>
+                    <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+                    <option value="fr">🇫🇷 Français (French)</option>
+                    <option value="pt">🇧🇷 Português (Portuguese)</option>
+                    <option value="zh-cn">🇨🇳 中文 (Chinese)</option>
+                    <option value="ar">🇸🇦 العربية (Arabic)</option>
+                    <option value="bn">🇧🇩 বাংলা (Bengali)</option>
+                    <option value="de">🇩🇪 Deutsch (German)</option>
+                    <option value="pa">🇮🇳 ਪੰਜਾਬੀ (Punjabi)</option>
+                </select>
+
+                <div class="file-upload" onclick="document.getElementById('imageUpload').click()">
+                    <p>📁 Click to upload plant images</p>
+                    <small>JPEG, PNG (Max 5 images)</small>
+                    <input type="file" id="imageUpload" accept="image/*" multiple>
+                </div>
+
+                <label>
+                    <input type="number" id="numImages" value="5" min="1" max="20" 
+                           style="width: 100px; padding: 8px; margin-right: 10px;">
+                    Number of images to analyze
+                </label>
+
+                <button class="btn btn-primary" onclick="detectDiseases()">
+                    🔍 Detect Diseases
+                </button>
+
+                <button class="btn btn-secondary" onclick="viewTrends()">
+                    📊 View Historical Trends
+                </button>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="card">
+                <h2>⚙️ Configuration</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-box">
+                        <h3>🎯 Detection Threshold</h3>
+                        <input type="range" id="threshold" min="0.1" max="1.0" step="0.05" value="0.25"
+                               style="width: 100%;"
+                               oninput="document.getElementById('thresholdValue').innerText = this.value">
+                        <p><strong id="thresholdValue">0.25</strong></p>
+                    </div>
+
+                    <div class="feature-box">
+                        <h3>📅 Trend Period</h3>
+                        <select id="trendDays" style="width: 100%; padding: 8px;">
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="60">Last 60 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                    </div>
+
+                    <div class="feature-box">
+                        <h3>📧 Email Alerts</h3>
+                        <p>Enabled for HIGH/CRITICAL</p>
+                        <small>Configure in settings</small>
+                    </div>
+
+                    <div class="feature-box">
+                        <h3>💾 Auto-Save</h3>
+                        <p>Results stored automatically</p>
+                        <small>Database tracking active</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chatbot Section -->
+            <div class="card chatbot">
+                <h2>💬 Agricultural Advisor Chatbot</h2>
+                
+                <input type="text" id="chatQuestion" class="chat-input" 
+                       placeholder="Ask a question... (e.g., 'How do I treat apple scab?')"
+                       onkeypress="if(event.key === 'Enter') askQuestion()">
+                
+                <button class="btn btn-secondary" onclick="askQuestion()">
+                    🤔 Ask Question
+                </button>
+
+                <div class="loading" id="chatLoading">
+                    <div class="spinner"></div>
+                    <p>Consulting agricultural expert...</p>
+                </div>
+
+                <div class="chat-response" id="chatResponse"></div>
+
+                <div style="margin-top: 20px;">
+                    <strong>💡 Example Questions:</strong>
+                    <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                        <li><a href="#" onclick="setQuestion('How do I treat apple scab?')">How do I treat apple scab?</a></li>
+                        <li><a href="#" onclick="setQuestion('What are organic treatment options?')">What are organic treatment options?</a></li>
+                        <li><a href="#" onclick="setQuestion('When should I apply fungicides?')">When should I apply fungicides?</a></li>
+                        <li><a href="#" onclick="setQuestion('How can I prevent grape black rot?')">How can I prevent grape black rot?</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card results">
+                <h2>📊 Detection Results</h2>
+                
+                <div class="loading" id="detectionLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing images with AI...</p>
+                </div>
+
+                <div id="resultContent" style="display: none;">
+                    <div id="statusMessage" class="status"></div>
+                    <div id="detectionSummary" style="margin-top: 20px;"></div>
+                    <div id="trendAnalysis" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Replace with your CrewAI AMP deployment URL and API key
+        const API_CONFIG = {
+            baseUrl: 'https://api.amp.crewai.com/crews/YOUR_CREW_ID',
+            apiKey: 'YOUR_API_KEY_HERE',
+            // For local testing, use:
+            // baseUrl: 'http://localhost:8000',
+            // apiKey: 'test'
+        };
+
+        // Utility function for API calls
+        async function callAPI(endpoint, method = 'POST', data = {}) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${API_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                if (method === 'POST') {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, options);
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        // Detect diseases
+        async function detectDiseases() {
+            const loading = document.getElementById('detectionLoading');
+            const resultContent = document.getElementById('resultContent');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            loading.classList.add('active');
+            resultContent.style.display = 'none';
+
+            try {
+                const data = {
+                    num_images: parseInt(document.getElementById('numImages').value),
+                    detection_threshold: parseFloat(document.getElementById('threshold').value),
+                    preferred_language: document.getElementById('language').value,
+                    trend_analysis_days: parseInt(document.getElementById('trendDays').value)
+                };
+
+                const result = await callAPI('/detect', 'POST', data);
+
+                // Display results
+                loading.classList.remove('active');
+                resultContent.style.display = 'block';
+                statusMessage.className = 'status success';
+                statusMessage.innerHTML = '✅ Detection Complete!';
+
+                // Show detection summary
+                displayDetectionSummary(result);
+
+            } catch (error) {
+                loading.classList.remove('active');
+                resultContent.style.display = 'block';
+                statusMessage.className = 'status error';
+                statusMessage.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Display detection summary
+        function displayDetectionSummary(result) {
+            const summaryDiv = document.getElementById('detectionSummary');
+            
+            // Format results (customize based on your API response structure)
+            summaryDiv.innerHTML = `
+                <h3>Detection Summary</h3>
+                <p><strong>Images Analyzed:</strong> ${result.images_analyzed || 'N/A'}</p>
+                <p><strong>Diseases Found:</strong> ${result.diseases_detected || 'N/A'}</p>
+                <p><strong>Severity Level:</strong> ${result.severity || 'N/A'}</p>
+                <p><strong>Report:</strong> <a href="${result.report_url || '#'}">View Full Report</a></p>
+                <p><strong>Visualizations:</strong> <a href="${result.visualizations_url || '#'}">View Annotated Images</a></p>
+            `;
+        }
+
+        // View trends
+        async function viewTrends() {
+            const loading = document.getElementById('detectionLoading');
+            const resultContent = document.getElementById('resultContent');
+            const statusMessage = document.getElementById('statusMessage');
+            const trendDiv = document.getElementById('trendAnalysis');
+            
+            loading.classList.add('active');
+            resultContent.style.display = 'none';
+
+            try {
+                const days = parseInt(document.getElementById('trendDays').value);
+                const result = await callAPI(`/trends?days=${days}`, 'GET');
+
+                loading.classList.remove('active');
+                resultContent.style.display = 'block';
+                statusMessage.className = 'status info';
+                statusMessage.innerHTML = '📊 Trend Analysis Complete';
+
+                // Display trend analysis
+                trendDiv.innerHTML = `
+                    <h3>Historical Trend Analysis (Last ${days} days)</h3>
+                    <p><strong>Total Sessions:</strong> ${result.total_sessions || 0}</p>
+                    <p><strong>Total Detections:</strong> ${result.total_detections || 0}</p>
+                    <p><strong>Trend Direction:</strong> ${result.trend_direction || 'N/A'}</p>
+                    <p><strong>Most Common Disease:</strong> ${result.most_common_disease || 'N/A'}</p>
+                    <div style="margin-top: 10px;">
+                        <strong>Insights:</strong>
+                        <ul style="margin-left: 20px;">
+                            ${(result.insights || []).map(insight => `<li>${insight}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+
+            } catch (error) {
+                loading.classList.remove('active');
+                resultContent.style.display = 'block';
+                statusMessage.className = 'status error';
+                statusMessage.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Ask chatbot question
+        async function askQuestion() {
+            const question = document.getElementById('chatQuestion').value;
+            if (!question.trim()) {
+                alert('Please enter a question');
+                return;
+            }
+
+            const loading = document.getElementById('chatLoading');
+            const responseDiv = document.getElementById('chatResponse');
+            
+            loading.classList.add('active');
+            responseDiv.classList.remove('active');
+
+            try {
+                const data = {
+                    question: question,
+                    language: document.getElementById('language').value
+                };
+
+                const result = await callAPI('/chatbot', 'POST', data);
+
+                loading.classList.remove('active');
+                responseDiv.classList.add('active');
+                responseDiv.innerHTML = `
+                    <strong>Question:</strong> ${question}<br><br>
+                    <strong>Answer:</strong><br>
+                    <div style="white-space: pre-wrap; margin-top: 10px;">${result.answer || 'No response available'}</div>
+                `;
+
+            } catch (error) {
+                loading.classList.remove('active');
+                responseDiv.classList.add('active');
+                responseDiv.innerHTML = `<p style="color: #721c24;">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        // Set example question
+        function setQuestion(question) {
+            document.getElementById('chatQuestion').value = question;
+            askQuestion();
+            return false;
+        }
+
+        // File upload handler
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            alert(`${files.length} image(s) selected. Click "Detect Diseases" to analyze.`);
+        });
+    </script>
+</body>
+</html>
+

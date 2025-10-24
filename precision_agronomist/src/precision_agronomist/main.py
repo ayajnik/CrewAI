@@ -16,15 +16,20 @@ def run():
     Run the plant disease detection crew.
     """
     inputs = {
-        # Google Drive URLs for your models (replace with actual URLs or set to None if models exist)
-        # To skip downloading, set these to 'None' or provide empty strings
-        'classification_model_url': 'None',  # Replace with your Google Drive URL or leave as 'None'
+        # Google Drive URL for YOLO model (if you need to download it)
+        # To skip downloading, set to 'None' (model should already exist)
         'yolo_model_url': 'None',  # Replace with your Google Drive URL or leave as 'None'
-        'class_names_url': 'None',  # Replace with your Google Drive URL or leave as 'None'
         
         # Prediction parameters
         'num_images': 5,  # Number of test images to analyze
         'detection_threshold': 0.25,  # YOLO confidence threshold (0-1)
+        
+        # Trend analysis
+        'trend_analysis_days': 30,  # Days of historical data to analyze
+        
+        # Chatbot and translation
+        'farmer_question_context': 'recent disease detections',  # Context for chatbot
+        'preferred_language': 'en',  # Language code: 'en', 'es', 'hi', 'fr', etc.
         
         # Metadata
         'current_date': str(datetime.now().strftime('%Y-%m-%d'))
@@ -61,11 +66,12 @@ def train():
     Train the crew for a given number of iterations.
     """
     inputs = {
-        'classification_model_url': 'None',
         'yolo_model_url': 'None',
-        'class_names_url': 'None',
         'num_images': 3,
         'detection_threshold': 0.25,
+        'trend_analysis_days': 30,
+        'farmer_question_context': 'recent disease detections',
+        'preferred_language': 'en',
         'current_date': str(datetime.now().strftime('%Y-%m-%d'))
     }
     try:
@@ -89,11 +95,12 @@ def test():
     Test the crew execution and returns the results.
     """
     inputs = {
-        'classification_model_url': 'None',
         'yolo_model_url': 'None',
-        'class_names_url': 'None',
         'num_images': 2,
         'detection_threshold': 0.25,
+        'trend_analysis_days': 30,
+        'farmer_question_context': 'recent disease detections',
+        'preferred_language': 'en',
         'current_date': str(datetime.now().strftime('%Y-%m-%d'))
     }
     
@@ -102,6 +109,80 @@ def test():
 
     except Exception as e:
         raise Exception(f"An error occurred while testing the crew: {e}")
+
+
+# AMP API Endpoints
+def detect_diseases_api(num_images: int = 5, detection_threshold: float = 0.25, preferred_language: str = "en"):
+    """API endpoint for disease detection"""
+    inputs = {
+        'yolo_model_url': 'None',
+        'num_images': num_images,
+        'detection_threshold': detection_threshold,
+        'trend_analysis_days': 30,
+        'farmer_question_context': 'recent disease detections',
+        'preferred_language': preferred_language,
+        'current_date': str(datetime.now().strftime('%Y-%m-%d'))
+    }
+    
+    try:
+        result = PrecisionAgronomist().crew().kickoff(inputs=inputs)
+        return {
+            "status": "success",
+            "result": result,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+def chatbot_api(question: str, language: str = "en"):
+    """API endpoint for chatbot"""
+    from precision_agronomist.tools.chatbot_tool import FarmerChatbotTool
+    
+    try:
+        chatbot = FarmerChatbotTool()
+        response = chatbot._run(
+            farmer_question=question,
+            language=language
+        )
+        return {
+            "status": "success",
+            "question": question,
+            "answer": response,
+            "language": language,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+def trends_api(days: int = 30):
+    """API endpoint for trend analysis"""
+    from precision_agronomist.tools.trend_analysis_tool import TrendAnalysisTool
+    
+    try:
+        analyzer = TrendAnalysisTool()
+        trends = analyzer._run(time_period_days=days)
+        return {
+            "status": "success",
+            "trends": trends,
+            "period_days": days,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 
 if __name__ == "__main__":

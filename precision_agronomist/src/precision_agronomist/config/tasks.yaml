@@ -1,24 +1,20 @@
 download_models_task:
   description: >
-    Download the required model artifacts from Google Drive if they are provided:
-    1. ResNet50 classification model (model.h5)
-    2. YOLOv8 detection model (best.pt)
-    3. Class names file (class_names.json)
+    Verify that the YOLOv8 detection model is available and ready for use.
+    If a Google Drive URL is provided for the YOLO model, download it.
     
-    Google Drive URLs (if provided):
-    - Classification Model: {classification_model_url}
-    - YOLO Model: {yolo_model_url}
-    - Class Names: {class_names_url}
+    Google Drive URL (if provided): {yolo_model_url}
     
-    If URLs are not provided or set to 'None', skip downloading and assume models
-    are already in place. Verify that all required model files exist in their
-    expected locations.
+    If URL is not provided or set to 'None', verify that the model already exists
+    at: artifacts/yolo_detection/plant_disease_run1/weights/best.pt
+    
+    The model should be ready for plant disease detection and localization.
   expected_output: >
-    Confirmation that all required models are either downloaded successfully or
-    already exist at correct locations:
-    - artifacts/model_training/model.h5
+    Confirmation that the YOLOv8 model is either downloaded successfully or
+    already exists at the correct location:
     - artifacts/yolo_detection/plant_disease_run1/weights/best.pt
-    - artifacts/model_training/class_names.json
+    
+    Report whether the model is ready for predictions.
   agent: model_manager
 
 load_test_images_task:
@@ -31,85 +27,216 @@ load_test_images_task:
     ready for analysis, along with metadata about total available images
   agent: image_analyst
 
-classify_images_task:
+detect_diseases_task:
   description: >
-    For each image loaded in the previous task, perform ResNet50 classification
-    to identify plant diseases. For each image:
-    1. Determine the predicted plant disease class
-    2. Calculate confidence score for the prediction
-    3. Identify the top 3 possible disease classes with their probabilities
+    For each image loaded in the previous task, run YOLOv8 object detection to
+    identify AND localize plant diseases. For each image:
+    1. Detect all disease regions with bounding boxes
+    2. Identify the specific disease class for each detection
+    3. Provide confidence scores for each detection
+    4. Count total number of disease instances found
     
-    Use the ResNet50 model that was downloaded/verified earlier.
-    Process ALL images provided from the load_test_images_task.
+    Use confidence threshold of {detection_threshold}.
+    Process ALL images from the load_test_images_task.
+    
+    YOLO provides both classification (disease name) and localization (where it is),
+    so this single step gives us complete disease analysis.
   expected_output: >
-    A comprehensive classification report for all images including:
+    A comprehensive disease detection report showing:
     - Image filename
-    - Predicted disease class
-    - Confidence scores
-    - Top 3 alternative predictions
+    - Detected disease classes with confidence scores
+    - Number of detections per class
+    - Bounding box coordinates for each detection
+    - Location of saved annotated images with visual bounding boxes
     Format as structured JSON or clear text
   agent: image_analyst
   context:
     - load_test_images_task
 
-detect_diseases_task:
+store_detections_task:
   description: >
-    For the SAME images that were classified, run YOLOv8 object detection to
-    localize disease regions. For each image:
-    1. Detect all disease regions with bounding boxes
-    2. Identify the specific disease class for each detection
-    3. Provide confidence scores for each detection
+    Store all disease detection results in the database for historical tracking
+    and trend analysis. Save each detection with:
+    - Unique session ID
+    - Timestamp
+    - Image path
+    - Disease classes detected
+    - Confidence scores
+    - Bounding box coordinates
+    - Severity assessment
     
-    Use confidence threshold of {detection_threshold}.
-    Process ALL images from the load_test_images_task.
+    This enables long-term monitoring of disease patterns across seasons.
   expected_output: >
-    A comprehensive object detection report showing:
-    - Image filename
-    - Number of detections found
-    - For each detection: class label, confidence score, and bounding box coordinates
-    - Location of saved annotated images
-    Format as structured JSON or clear text
-  agent: image_analyst
+    Confirmation that all detections have been stored in the database
+    with session ID and record count
+  agent: data_analyst
   context:
-    - classify_images_task
+    - detect_diseases_task
+
+analyze_trends_task:
+  description: >
+    Analyze historical disease detection data from the database to identify:
+    1. Disease frequency patterns over time
+    2. Seasonal trends and correlations
+    3. Most concerning diseases based on prevalence
+    4. Disease progression (increasing/decreasing/stable)
+    5. Areas requiring preventive action
+    
+    Analyze the last {trend_analysis_days} days of data (default: 30 days).
+    Provide actionable insights for proactive farm management.
+  expected_output: >
+    A comprehensive trend analysis report in JSON format including:
+    - Overall statistics (total detections, sessions, unique diseases)
+    - Disease distribution and frequency rankings
+    - Trend direction (increasing/decreasing/stable) with percentage change
+    - Severity distribution
+    - Key insights and recommendations
+    - Data quality assessment
+  agent: data_analyst
+  context:
+    - store_detections_task
+
+send_alert_task:
+  description: >
+    Evaluate disease severity and send email alerts if high-severity diseases
+    are detected. Alert criteria:
+    - Severity level: HIGH or CRITICAL
+    - Multiple detections of same disease (indicates spreading)
+    - High-confidence detections (>0.8)
+    
+    Email should include:
+    - Severity level and urgency
+    - Summary of detected diseases
+    - Number of affected images
+    - Immediate action recommendations
+    - Links to full report and visualizations
+    
+    Only send alerts for genuinely concerning situations to avoid alert fatigue.
+  expected_output: >
+    Alert status confirmation (sent/not sent) with:
+    - Severity level evaluated
+    - Number of detections triggering alert
+    - Email delivery confirmation or reason for not sending
+  agent: report_generator
+  context:
+    - detect_diseases_task
+    - analyze_trends_task
 
 generate_report_task:
   description: >
-    Create a comprehensive plant disease diagnostic report by analyzing and
-    combining results from both classification and detection tasks.
+    Create a comprehensive plant disease diagnostic report by analyzing
+    the YOLO detection results and trend analysis.
     
     The report should include:
     1. Executive Summary
        - Total images analyzed
+       - Total disease instances detected
        - Overall findings and patterns
+       - Most common diseases found
+       - Severity assessment
     
     2. Image-by-Image Analysis
        - For each image:
-         * Classification result (overall disease)
-         * Detection results (localized disease regions)
-         * Comparison: Does detection confirm classification?
-         * Number of affected areas
+         * Disease classes detected
+         * Confidence scores for each detection
+         * Number of disease instances per class
+         * Bounding box locations
+         * Severity assessment (based on number of detections)
     
-    3. Model Performance Comparison
-       - Agreement between classification and detection
-       - Confidence levels across both models
+    3. Historical Trend Analysis
+       - Disease patterns over time (from trend analysis)
+       - Comparison with previous sessions
+       - Seasonal insights
+       - Progression indicators
     
-    4. Key Findings and Recommendations
-       - Most common diseases detected
-       - Severity assessment based on detection count
-       - Suggested actions or treatments (if applicable)
+    4. Disease Distribution Analysis
+       - Which diseases are most prevalent
+       - Which images have multiple disease types
+       - Confidence level patterns
+    
+    5. Key Findings and Recommendations
+       - Most affected plants/areas
+       - Severity assessment based on detection density
+       - Suggested actions or treatments based on detected diseases
+       - Priority areas needing attention
+       - Preventive measures based on trends
     
     Format the report in clean markdown with headers, bullet points, and tables
-    where appropriate. Make it professional and actionable.
+    where appropriate. Make it professional, visual, and actionable for farmers/agronomists.
   expected_output: >
     A detailed markdown report (plant_disease_report.md) with:
-    - Executive summary of all findings
-    - Detailed analysis for each image
-    - Comparison between classification and detection results
-    - Professional recommendations based on AI model outputs
+    - Executive summary with key statistics
+    - Detailed analysis for each image with disease findings
+    - Historical trend insights
+    - Disease distribution tables and summaries
+    - Professional recommendations based on YOLO detections and trends
     - Clear formatting with sections, tables, and visual hierarchy
+    - References to saved annotated images for visual confirmation
   agent: report_generator
   output_file: 'plant_disease_report.md'
   context:
-    - classify_images_task
     - detect_diseases_task
+    - analyze_trends_task
+
+chatbot_assistance_task:
+  description: >
+    Provide interactive assistance to farmers based on the detection results.
+    Answer common questions about:
+    1. Detected diseases - what they are and how serious
+    2. Treatment recommendations - both conventional and organic
+    3. Prevention strategies for future seasons
+    4. Best practices for disease management
+    5. Cost-effective solutions
+    6. Timing and seasonal considerations
+    
+    Generate responses for typical farmer questions:
+    - "How do I treat [detected disease]?"
+    - "What organic options are available?"
+    - "How can I prevent this in the future?"
+    - "When should I apply treatments?"
+    - "What are the best practices?"
+    
+    Context from current session: Detection results show {farmer_question_context}
+    
+    Provide farmer-friendly, actionable advice in clear language.
+  expected_output: >
+    A chatbot response summary with:
+    - Answers to key questions about detected diseases
+    - Treatment and prevention recommendations
+    - Best practices guide
+    - Resource links for additional support
+    - Language: {preferred_language} (default: English)
+  agent: farmer_advisor
+  context:
+    - detect_diseases_task
+    - generate_report_task
+
+translate_report_task:
+  description: >
+    Translate key sections of the disease report to the farmer's preferred language
+    for global accessibility. Target language: {preferred_language}
+    
+    Translate:
+    1. Executive summary
+    2. Key findings and recommendations
+    3. Treatment instructions
+    4. Prevention strategies
+    
+    Preserve technical disease names but provide translations for:
+    - Action items
+    - Descriptions
+    - Recommendations
+    - Safety instructions
+    
+    Ensure translations are culturally appropriate and agriculture-context accurate.
+  expected_output: >
+    Translated report sections in {preferred_language} saved to:
+    plant_disease_report_{preferred_language}.md
+    
+    Include:
+    - Translation metadata (source/target language)
+    - Confidence level
+    - Note about technical terms preserved
+  agent: farmer_advisor
+  context:
+    - generate_report_task

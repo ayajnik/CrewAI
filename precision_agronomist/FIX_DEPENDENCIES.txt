@@ -1,0 +1,30 @@
+=========================================================
+  FIX TRANSLATION DEPENDENCY CONFLICTS
+=========================================================
+
+Run these commands in PowerShell (copy and paste one at a time):
+
+1. Uninstall the problematic package:
+   pip uninstall googletrans -y
+
+2. Install the better translation library:
+   pip install deep-translator --upgrade
+
+3. Fix httpx conflicts:
+   pip install httpx --upgrade
+
+4. Verify everything is working:
+   pip list | findstr httpx
+
+=========================================================
+
+Expected result: httpx should be version 0.27.0 or higher
+
+After running these, you can use:
+   cd precision_agronomist
+   crewai run
+
+All translation features will work perfectly with NO conflicts!
+
+=========================================================
+

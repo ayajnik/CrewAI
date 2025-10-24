@@ -1,0 +1,79 @@
+name: precision-agronomist
+description: AI-powered plant disease detection system with YOLO, trend analysis, and farmer chatbot
+version: 1.0.0
+
+# Runtime configuration
+runtime:
+  python_version: "3.10"
+  max_execution_time: 600  # 10 minutes
+  memory: 2048  # 2GB RAM
+
+# Environment variables (do NOT include secrets here)
+environment:
+  PREFERRED_LANGUAGE: "en"
+  TREND_ANALYSIS_DAYS: "30"
+  NUM_IMAGES: "5"
+  DETECTION_THRESHOLD: "0.25"
+
+# API endpoints
+api:
+  enabled: true
+  endpoints:
+    - path: /detect
+      method: POST
+      description: "Detect plant diseases in uploaded images"
+      parameters:
+        - name: num_images
+          type: integer
+          default: 5
+        - name: detection_threshold
+          type: float
+          default: 0.25
+        - name: preferred_language
+          type: string
+          default: "en"
+    
+    - path: /chatbot
+      method: POST
+      description: "Ask the agricultural advisor chatbot"
+      parameters:
+        - name: question
+          type: string
+          required: true
+        - name: language
+          type: string
+          default: "en"
+    
+    - path: /trends
+      method: GET
+      description: "Get disease trend analysis"
+      parameters:
+        - name: days
+          type: integer
+          default: 30
+
+# Storage configuration
+storage:
+  - type: sqlite
+    path: disease_tracking.db
+    description: "Historical disease detection database"
+  
+  - type: file
+    path: artifacts/
+    description: "Model weights and detection results"
+
+# External dependencies (installed in ml_env)
+external_services:
+  - name: ml_environment
+    type: subprocess
+    python_path: ml_env/Scripts/python.exe
+    description: "Separate Python 3.12 environment for TensorFlow/YOLO"
+
+# Monitoring
+monitoring:
+  enabled: true
+  metrics:
+    - detections_per_session
+    - alert_frequency
+    - chatbot_interactions
+    - translation_requests

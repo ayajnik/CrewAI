@@ -9,7 +9,11 @@ dependencies = [
     "pandas>=2.2.0,<3.0.0",
     "numpy>=1.26.0,<2.0.0",
     "gdown>=4.7.0",
-    "pillow>=10.0.0"
+    "pillow>=10.0.0",
+    "deep-translator>=1.11.4",  # For multi-language translation (no dependency conflicts)
+    "fastapi>=0.104.0",  # For API endpoints
+    "uvicorn>=0.24.0",   # For API server
+    "python-multipart>=0.0.6",  # For file uploads
 ]
 
 

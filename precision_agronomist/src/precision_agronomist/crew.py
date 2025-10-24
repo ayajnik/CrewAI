@@ -6,8 +6,13 @@ from typing import List
 # Import custom tools
 from precision_agronomist.tools.model_downloader_tool import ModelDownloaderTool
 from precision_agronomist.tools.image_loader_tool import ImageLoaderTool
-from precision_agronomist.tools.image_classifier_tool import ImageClassifierTool
 from precision_agronomist.tools.yolo_detector_tool import YOLODetectorTool
+from precision_agronomist.tools.database_storage_tool import DatabaseStorageTool
+from precision_agronomist.tools.trend_analysis_tool import TrendAnalysisTool
+from precision_agronomist.tools.email_alert_tool import EmailAlertTool
+from precision_agronomist.tools.chatbot_tool import FarmerChatbotTool
+from precision_agronomist.tools.translation_tool import TranslationTool
+# Note: ImageClassifierTool removed - using YOLO-only approach to avoid TensorFlow conflicts
 
 
 @CrewBase
@@ -39,8 +44,9 @@ class PrecisionAgronomist():
             verbose=True,
             tools=[
                 ImageLoaderTool(),
-                ImageClassifierTool(),
                 YOLODetectorTool()
+                # Note: Removed ImageClassifierTool to avoid TensorFlow compatibility issues
+                # YOLO provides both classification and localization
             ]
         )
 
@@ -48,7 +54,24 @@ class PrecisionAgronomist():
     def report_generator(self) -> Agent:
         return Agent(
             config=self.agents_config['report_generator'],  # type: ignore[index]
-            verbose=True
+            verbose=True,
+            tools=[EmailAlertTool()]
+        )
+    
+    @agent
+    def farmer_advisor(self) -> Agent:
+        return Agent(
+            config=self.agents_config['farmer_advisor'],  # type: ignore[index]
+            verbose=True,
+            tools=[FarmerChatbotTool(), TranslationTool()]
+        )
+    
+    @agent
+    def data_analyst(self) -> Agent:
+        return Agent(
+            config=self.agents_config['data_analyst'],  # type: ignore[index]
+            verbose=True,
+            tools=[DatabaseStorageTool(), TrendAnalysisTool()]
         )
 
     # To learn more about structured task outputs,
@@ -70,13 +93,6 @@ class PrecisionAgronomist():
         )
 
     @task
-    def classify_images_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['classify_images_task'],  # type: ignore[index]
-            agent=self.image_analyst()
-        )
-
-    @task
     def detect_diseases_task(self) -> Task:
         return Task(
             config=self.tasks_config['detect_diseases_task'],  # type: ignore[index]
@@ -84,11 +100,46 @@ class PrecisionAgronomist():
         )
 
     @task
+    def store_detections_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['store_detections_task'],  # type: ignore[index]
+            agent=self.data_analyst()
+        )
+    
+    @task
+    def analyze_trends_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['analyze_trends_task'],  # type: ignore[index]
+            agent=self.data_analyst()
+        )
+    
+    @task
+    def send_alert_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['send_alert_task'],  # type: ignore[index]
+            agent=self.report_generator()
+        )
+    
+    @task
     def generate_report_task(self) -> Task:
         return Task(
             config=self.tasks_config['generate_report_task'],  # type: ignore[index]
             agent=self.report_generator(),
             output_file='plant_disease_report.md'
+        )
+    
+    @task
+    def chatbot_assistance_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['chatbot_assistance_task'],  # type: ignore[index]
+            agent=self.farmer_advisor()
+        )
+    
+    @task
+    def translate_report_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['translate_report_task'],  # type: ignore[index]
+            agent=self.farmer_advisor()
         )
 
     @crew
